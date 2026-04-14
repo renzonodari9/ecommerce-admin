@@ -12,9 +12,9 @@ import { useState } from 'react';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/products', icon: Package, label: 'Productos' },
-  { to: '/categories', icon: FolderTree, label: 'Categorías' },
-  { to: '/orders', icon: ShoppingCart, label: 'Pedidos' },
+  { to: '/admin/products', icon: Package, label: 'Productos' },
+  { to: '/admin/categories', icon: FolderTree, label: 'Categorías' },
+  { to: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
 ];
 
 export default function Sidebar() {

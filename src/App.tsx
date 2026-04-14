@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Categories from './pages/Categories';
 import Orders from './pages/Orders';
+import PublicProducts from './pages/PublicProducts';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -31,6 +32,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/products" element={<PublicProducts />} />
           <Route
             path="/"
             element={
@@ -40,9 +42,9 @@ function App() {
             }
           >
             <Route index element={<Dashboard />} />
-            <Route path="products" element={<Products />} />
-            <Route path="categories" element={<Categories />} />
-            <Route path="orders" element={<Orders />} />
+            <Route path="admin/products" element={<Products />} />
+            <Route path="admin/categories" element={<Categories />} />
+            <Route path="admin/orders" element={<Orders />} />
           </Route>
         </Routes>
       </BrowserRouter>
