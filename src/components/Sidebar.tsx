@@ -1,20 +1,17 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard,
   Package,
   FolderTree,
   ShoppingCart,
-  LogOut,
   Menu,
   X
 } from 'lucide-react';
 import { useState } from 'react';
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/products', icon: Package, label: 'Productos' },
-  { to: '/admin/categories', icon: FolderTree, label: 'Categorías' },
-  { to: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
+  { to: '/', icon: Package, label: 'Productos' },
+  { to: '/categories', icon: FolderTree, label: 'Categorías' },
+  { to: '/orders', icon: ShoppingCart, label: 'Pedidos' },
 ];
 
 export default function Sidebar() {
@@ -36,7 +33,7 @@ export default function Sidebar() {
       >
         <div className="p-6">
           <h1 className="text-2xl font-bold text-white mb-2">E-commerce</h1>
-          <p className="text-gray-400 text-sm">Admin Dashboard</p>
+          <p className="text-gray-400 text-sm">Admin Panel</p>
         </div>
 
         <nav className="mt-6">
@@ -58,19 +55,6 @@ export default function Sidebar() {
             </NavLink>
           ))}
         </nav>
-
-        <div className="absolute bottom-0 w-full p-4">
-          <button
-            onClick={() => {
-              localStorage.removeItem('admin_token');
-              window.location.href = '/login';
-            }}
-            className="flex items-center gap-3 px-6 py-3 text-gray-300 hover:bg-red-600 hover:text-white transition-colors w-full"
-          >
-            <LogOut size={20} />
-            <span>Cerrar Sesión</span>
-          </button>
-        </div>
       </aside>
 
       {isOpen && (
