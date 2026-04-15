@@ -49,10 +49,21 @@ export default function Products() {
   const loadProducts = async () => {
     try {
       const data: any = await api.getProducts('limit=100');
-      const parsedProducts = (data.data || []).map((p: any) => ({
-        ...p,
-        images: typeof p.images === 'string' ? JSON.parse(p.images || '[]') : p.images,
-      }));
+      const parsedProducts = (data.data || []).map((p: any) => {
+        let images = [];
+        if (p.images) {
+          if (typeof p.images === 'string') {
+            try {
+              images = JSON.parse(p.images);
+            } catch {
+              images = [p.images];
+            }
+          } else if (Array.isArray(p.images)) {
+            images = p.images;
+          }
+        }
+        return { ...p, images };
+      });
       setProducts(parsedProducts);
     } catch (error) {
       console.error('Error loading products:', error);
