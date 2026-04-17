@@ -1,68 +1,69 @@
-# 🛒 E-commerce Admin Dashboard
+# 🚀 E-commerce Admin Dashboard
 
-Panel de administración profesional para gestionar tu tienda e-commerce.
+Panel de administración profesional para gestionar tiendas e-commerce. Dashboard completo con estadísticas, gráficos y gestión de productos.
 
-## 🚀 Funcionalidades
+## 📌 Descripción
+Panel administrativo que permite gestionar productos, categorías, pedidos y visualizar estadísticas de la tienda. Diseñado para administradores de e-commerce con una interfaz moderna e intuitiva.
 
-- **Dashboard** - Estadísticas y resumen de la tienda
-- **Productos** - CRUD completo de productos
-- **Categorías** - Gestión de categorías
-- **Pedidos** - Ver y gestionar pedidos con cambio de estado
-- **Autenticación** - Login/logout seguro
-
-## 🛠️ Tech Stack
-
+## 🛠️ Tecnologías
 - React 18
 - TypeScript
 - Tailwind CSS
 - React Router v6
-- Lucide Icons
-- Recharts (gráficos)
+- Lucide React
+- Recharts
+- Vite
+
+## ⚡ Features
+- Dashboard con estadísticas y gráficos
+- Gestión completa de productos (CRUD)
+- Gestión de categorías
+- Visualización y gestión de pedidos
+- Cambio de estado de pedidos
+- Sistema de autenticación
+- Diseño responsive
+- Tema oscuro
+
+## 🌐 Demo
+**https://admin-ecommerce-demo.netlify.app/**
+
+## 🔐 Credenciales (Desarrollo)
+- **Email**: admin@ecommerce.com
+- **Contraseña**: Admin123!
 
 ## 📦 Instalación
 
 ```bash
+# Clonar el repo
+git clone https://github.com/renzonodari9/ecommerce-admin.git
+cd ecommerce-admin
+
+# Instalar dependencias
 npm install
-```
 
-## 🚀 Ejecución
-
-```bash
+# Ejecutar en desarrollo
 npm run dev
 ```
 
-Abrir http://localhost:5174
-
-## 🔐 Credenciales
-
-- **Email**: admin@ecommerce.com
-- **Contraseña**: Admin123!
-
-## 🌐 API Backend
-
-El admin se conecta a la API en http://localhost:3001
-
-Asegurate de tener el backend corriendo antes de iniciar el admin.
+**Importante**: Requiere que el backend (ecommerce-api) esté corriendo en el puerto 3001.
 
 ## 📁 Estructura
 
 ```
 src/
-├── components/    # Componentes reutilizables
-├── context/      # Contextos de React (Auth)
-├── pages/        # Páginas principales
-├── services/     # Servicios API
-└── App.tsx       # Rutas y configuración
+├── components/     # Componentes reutilizables
+├── context/       # Contextos (Auth)
+├── pages/         # Páginas principales
+├── services/      # Servicios API
+└── App.tsx        # Rutas y configuración
 ```
 
-## 🚀 Deploy
+## 🌐 Variables de Entorno
 
-Desplegar en Netlify:
+```env
+VITE_API_URL=http://localhost:3001
+```
 
-1. Conectar repo de GitHub
-2. Root directory: `ecommerce-admin`
-3. Build command: `npm run build`
-4. Publish directory: `dist`
-
-Agregar variable de entorno:
-- `VITE_API_URL` = URL del backend desplegado
+## 👨‍💻 Autor
+**Renzo Nodari** - Desarrollador Full Stack
+- GitHub: @renzonodari9
