@@ -1,110 +1,146 @@
-import { useEffect, useState } from 'react';
-import api from '../services/api';
-import { Plus, Edit, Trash2, Search, Package, Star, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import {
+  Search,
+  Filter,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  AlertCircle,
+  Package,
+  X
+} from 'lucide-react';
 
 interface Product {
   id: string;
   name: string;
-  slug: string;
   description: string;
-  price: string;
+  price: number;
   stock: number;
-  sku: string;
-  images: string[];
-  active: boolean;
-  featured: boolean;
-  category: { id: string; name: string };
+  category: string;
+  status: 'active' | 'inactive' | 'outofstock';
+  image: string;
+  createdAt: string;
 }
 
-interface Category {
-  id: string;
-  name: string;
-}
+const mockProducts: Product[] = [
+  { id: '1', name: 'iPhone 15 Pro Max', description: 'Smartphone flagship de Apple', price: 1199.99, stock: 45, category: 'Electronics', status: 'active', image: '/images/iPhone15ProMax.svg', createdAt: '2024-01-10' },
+  { id: '2', name: 'Samsung Galaxy S24 Ultra', description: 'Smartphone Android premium', price: 1099.99, stock: 32, category: 'Electronics', status: 'active', image: '/images/SamsungGalaxyS24Ultra.svg', createdAt: '2024-01-09' },
+  { id: '3', name: 'MacBook Pro 16"', description: 'Laptop profesional', price: 2499.99, stock: 15, category: 'Electronics', status: 'active', image: '/images/MacBookPro16.svg', createdAt: '2024-01-08' },
+  { id: '4', name: 'Sony WH-1000XM5', description: 'Auriculares premium', price: 399.99, stock: 0, category: 'Audio', status: 'outofstock', image: '/images/SonyWH1000XM5.svg', createdAt: '2024-01-07' },
+  { id: '5', name: 'Nike Air Max 270', description: 'Zapatillas deportivas', price: 149.99, stock: 78, category: 'Fashion', status: 'active', image: '/images/NikeAirMax270.svg', createdAt: '2024-01-06' },
+  { id: '6', name: 'Adidas Ultraboost', description: 'Zapatillas running', price: 179.99, stock: 56, category: 'Fashion', status: 'active', image: '/images/AdidasUltraboost.svg', createdAt: '2024-01-05' },
+  { id: '7', name: 'iPad Pro 12.9"', description: 'Tablet profesional', price: 1099.99, stock: 23, category: 'Electronics', status: 'active', image: '/images/iPadPro129.svg', createdAt: '2024-01-04' },
+  { id: '8', name: 'Apple Watch Ultra 2', description: 'Smartwatch premium', price: 799.99, stock: 41, category: 'Electronics', status: 'active', image: '/images/AppleWatchUltra2.svg', createdAt: '2024-01-03' },
+  { id: '9', name: 'Bose QuietComfort', description: 'Auriculares noise cancelling', price: 329.99, stock: 67, category: 'Audio', status: 'active', image: '/images/BoseQuietComfort.svg', createdAt: '2024-01-02' },
+  { id: '10', name: 'LG C3 OLED 55"', description: 'Smart TV OLED', price: 1499.99, stock: 12, category: 'Electronics', status: 'active', image: '/images/LGC3OLED55.svg', createdAt: '2024-01-01' },
+  { id: '11', name: 'PlayStation 5', description: 'Consola de videojuegos', price: 499.99, stock: 0, category: 'Gaming', status: 'outofstock', image: '/images/PlayStation5.svg', createdAt: '2023-12-30' },
+  { id: '12', name: 'Xbox Series X', description: 'Consola de videojuegos', price: 499.99, stock: 28, category: 'Gaming', status: 'active', image: '/images/XboxSeriesX.svg', createdAt: '2023-12-29' },
+];
+
+const ITEMS_PER_PAGE = 8;
+
+const categories = ['Todos', 'Electronics', 'Audio', 'Fashion', 'Gaming'];
+const statuses = ['Todos', 'active', 'inactive', 'outofstock'];
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('Todos');
+  const [status, setStatus] = useState('Todos');
+  const [sort, setSort] = useState('name');
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
     stock: '',
-    sku: '',
-    categoryId: '',
-    images: [''],
-    active: true,
-    featured: false,
+    category: 'Electronics',
+    status: 'active' as const,
+    image: '',
   });
 
   useEffect(() => {
-    loadProducts();
-    loadCategories();
+    const fetchProducts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        setProducts(mockProducts);
+      } catch (err) {
+        setError('Error al cargar productos');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
-  const loadProducts = async () => {
-    try {
-      const data: any = await api.getProducts('limit=100');
-      const parsedProducts = (data.data || []).map((p: any) => {
-        let images = [];
-        if (p.images) {
-          if (typeof p.images === 'string') {
-            try {
-              images = JSON.parse(p.images);
-            } catch {
-              images = [p.images];
-            }
-          } else if (Array.isArray(p.images)) {
-            images = p.images;
-          }
-        }
-        return { ...p, images };
-      });
-      setProducts(parsedProducts);
-    } catch (error) {
-      console.error('Error loading products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadCategories = async () => {
-    try {
-      const data: any = await api.getCategories();
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Error loading categories:', error);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const payload = {
-        ...formData,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        images: formData.images.filter((img) => img.trim() !== ''),
-      };
-
-      if (editingProduct) {
-        await api.updateProduct(editingProduct.id, payload);
-      } else {
-        await api.createProduct(payload);
+  const filteredProducts = products
+    .filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase()) ||
+        product.description.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory = category === 'Todos' || product.category === category;
+      const matchesStatus = status === 'Todos' || product.status === status;
+      return matchesSearch && matchesCategory && matchesStatus;
+    })
+    .sort((a, b) => {
+      switch (sort) {
+        case 'price_asc':
+          return a.price - b.price;
+        case 'price_desc':
+          return b.price - a.price;
+        case 'stock':
+          return b.stock - a.stock;
+        case 'name':
+        default:
+          return a.name.localeCompare(b.name);
       }
+    });
 
-      setShowModal(false);
-      setEditingProduct(null);
-      resetForm();
-      loadProducts();
-    } catch (error) {
-      console.error('Error saving product:', error);
-      alert('Error al guardar el producto');
-    }
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, category, status, sort]);
+
+  const getStatusBadge = (status: string) => {
+    const map: Record<string, string> = {
+      active: 'badge-success',
+      inactive: 'badge-neutral',
+      outofstock: 'badge-danger',
+    };
+    return map[status] || 'badge-neutral';
+  };
+
+  const getStatusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      active: 'Activo',
+      inactive: 'Inactivo',
+      outofstock: 'Agotado',
+    };
+    return map[status] || status;
+  };
+
+  const handleView = (product: Product) => {
+    setViewingProduct(product);
   };
 
   const handleEdit = (product: Product) => {
@@ -112,379 +148,367 @@ export default function Products() {
     setFormData({
       name: product.name,
       description: product.description,
-      price: product.price,
+      price: product.price.toString(),
       stock: product.stock.toString(),
-      sku: product.sku,
-      categoryId: product.category?.id || '',
-      images: product.images || [''],
-      active: product.active,
-      featured: product.featured,
+      category: product.category,
+      status: product.status,
+      image: product.image,
     });
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de eliminar este producto?')) {
-      try {
-        await api.deleteProduct(id);
-        loadProducts();
-      } catch (error) {
-        console.error('Error deleting product:', error);
-        alert('Error al eliminar el producto');
-      }
+  const handleDelete = (product: Product) => {
+    setDeletingProduct(product);
+  };
+
+  const confirmDelete = () => {
+    if (deletingProduct) {
+      setProducts(prev => prev.filter(p => p.id !== deletingProduct.id));
+      setDeletingProduct(null);
     }
   };
 
-  const resetForm = () => {
+  const handleCreate = () => {
+    setEditingProduct(null);
     setFormData({
       name: '',
       description: '',
       price: '',
       stock: '',
-      sku: '',
-      categoryId: '',
-      images: [''],
-      active: true,
-      featured: false,
+      category: 'Electronics',
+      status: 'active',
+      image: '',
     });
+    setShowModal(true);
   };
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (editingProduct) {
+        setProducts(prev => prev.map(p =>
+          p.id === editingProduct.id
+            ? { ...p, ...formData, price: parseFloat(formData.price), stock: parseInt(formData.stock) }
+            : p
+        ));
+      } else {
+        const newProduct: Product = {
+          id: Date.now().toString(),
+          name: formData.name,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          stock: parseInt(formData.stock),
+          category: formData.category,
+          status: formData.status,
+          image: formData.image || '/images/iPhone15ProMax.svg',
+          createdAt: new Date().toISOString().split('T')[0],
+        };
+        setProducts(prev => [...prev, newProduct]);
+      }
+      setShowModal(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <AlertCircle className="w-10 h-10 text-red-500" />
+        <p className="text-red-500">{error}</p>
+        <button onClick={() => window.location.reload()} className="btn-primary">
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Productos</h1>
-          <p className="text-gray-500 mt-1">{products.length} productos en total</p>
+          <h1 className="text-2xl font-bold">Productos</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Gestiona el inventario de tu tienda
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-3 py-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500 hover:text-gray-700'}`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded-md transition-colors ${viewMode === 'table' ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500 hover:text-gray-700'}`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              </svg>
-            </button>
+        <button className="btn-primary" onClick={handleCreate}>
+          <Plus size={20} />
+          Nuevo Producto
+        </button>
+      </div>
+
+      <div className="card p-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Buscar productos..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input pl-10"
+            />
           </div>
+
           <button
-            onClick={() => {
-              resetForm();
-              setEditingProduct(null);
-              setShowModal(true);
-            }}
-            className="btn-primary flex items-center gap-2"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`btn-secondary lg:hidden ${showFilters ? 'bg-primary-50 border-primary-500 text-primary-600' : ''}`}
           >
-            <Plus size={20} />
-            Nuevo Producto
+            <Filter size={20} />
+            Filtros
           </button>
+
+          <div className={`grid grid-cols-1 sm:grid-cols-3 lg:flex gap-4 ${showFilters ? 'grid' : 'hidden lg:flex'}`}>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="input"
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat === 'Todos' ? 'Todas las categorías' : cat}</option>
+              ))}
+            </select>
+
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="input"
+            >
+              {statuses.map(s => (
+                <option key={s} value={s}>{s === 'Todos' ? 'Todos los estados' : getStatusLabel(s)}</option>
+              ))}
+            </select>
+
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="input"
+            >
+              <option value="name">Ordenar por nombre</option>
+              <option value="price_asc">Precio: menor a mayor</option>
+              <option value="price_desc">Precio: mayor a menor</option>
+              <option value="stock">Stock disponible</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-          <input
-            type="text"
-            placeholder="Buscar productos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-admin pl-10"
-          />
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="bg-white rounded-xl h-80 animate-pulse" />
-          ))}
-        </div>
-      ) : filteredProducts.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center">
-          <Package className="mx-auto text-gray-300 mb-4" size={64} />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No hay productos</h3>
-          <p className="text-gray-500 mb-6">Comienza agregando tu primer producto</p>
-          <button
-            onClick={() => {
-              resetForm();
-              setEditingProduct(null);
-              setShowModal(true);
-            }}
-            className="btn-primary"
-          >
-            Agregar Producto
-          </button>
-        </div>
-      ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow group">
-              <div className="relative aspect-square bg-gray-100 overflow-hidden">
-                {product.images?.[0] ? (
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <Package className="text-gray-300" size={64} />
-                  </div>
-                )}
-                {product.featured && (
-                  <div className="absolute top-3 left-3 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                    <Star size={12} fill="currentColor" />
-                    Destacado
-                  </div>
-                )}
-                {!product.active && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <span className="bg-gray-800 text-white px-3 py-1 rounded-full text-sm font-medium">Inactivo</span>
-                  </div>
-                )}
-              </div>
-              <div className="p-4">
-                {product.category && (
-                  <span className="text-xs text-primary-600 font-medium">{product.category.name}</span>
-                )}
-                <h3 className="font-semibold text-gray-800 mt-1 truncate">{product.name}</h3>
-                <p className="text-sm text-gray-500 mt-1 line-clamp-2 h-10">{product.description}</p>
-                <div className="flex items-center justify-between mt-4">
-                  <span className="text-2xl font-bold text-gray-800">${Number(product.price).toFixed(2)}</span>
-                  <span className={`text-sm font-medium ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-yellow-600' : 'text-red-600'}`}>
-                    {product.stock > 0 ? `${product.stock} uds` : 'Sin stock'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
-                  <button
-                    onClick={() => handleEdit(product)}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
-                  >
-                    <Edit size={16} />
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(product.id)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+      {filteredProducts.length === 0 ? (
+        <div className="card p-12 flex flex-col items-center justify-center gap-4">
+          <Package className="w-16 h-16 text-gray-300" />
+          <h3 className="text-lg font-semibold">No se encontraron productos</h3>
+          <p className="text-gray-500">Intenta ajustar los filtros de búsqueda</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <table className="table-admin">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>SKU</th>
-                <th>Precio</th>
-                <th>Stock</th>
-                <th>Categoría</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map((product) => (
-                <tr key={product.id}>
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                        {product.images?.[0] ? (
-                          <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <Package className="text-gray-400" size={24} />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800">{product.name}</p>
-                        <p className="text-sm text-gray-500 truncate max-w-xs">{product.description}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="font-mono text-sm text-gray-500">{product.sku}</td>
-                  <td className="font-semibold text-lg">${Number(product.price).toFixed(2)}</td>
-                  <td>
-                    <span className={`badge ${product.stock > 10 ? 'badge-success' : product.stock > 0 ? 'badge-warning' : 'badge-danger'}`}>
-                      {product.stock}
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {paginatedProducts.map((product, index) => (
+              <div
+                key={product.id}
+                className="card p-4 animate-slide-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 overflow-hidden">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between">
+                    <h3 className="font-semibold line-clamp-1">{product.name}</h3>
+                    <span className={getStatusBadge(product.status)}>
+                      {getStatusLabel(product.status)}
                     </span>
-                  </td>
-                  <td>{product.category?.name || '-'}</td>
-                  <td>
-                    {product.active ? (
-                      <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                        <Eye size={16} /> Activo
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-gray-400 text-sm font-medium">
-                        <EyeOff size={16} /> Inactivo
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => handleEdit(product)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                  </div>
+                  <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>
+                  <div className="flex items-center justify-between pt-2">
+                    <div>
+                      <p className="text-lg font-bold text-primary-600">${product.price}</p>
+                      <p className="text-xs text-gray-500">{product.stock} unidades</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleView(product)}
+                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <Eye size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(product)}
+                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
                         <Edit size={18} />
                       </button>
-                      <button onClick={() => handleDelete(product.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <button
+                        onClick={() => handleDelete(product)}
+                        className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      >
                         <Trash2 size={18} />
                       </button>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="card p-4 flex items-center justify-between">
+              <p className="text-sm text-gray-500">
+                Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1} -{' '}
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredProducts.length)} de{' '}
+                {filteredProducts.length} productos
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="btn-secondary btn-sm disabled:opacity-50"
+                >
+                  <ChevronLeft size={18} />
+                  Anterior
+                </button>
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                        currentPage === page
+                          ? 'bg-primary-600 text-white'
+                          : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="btn-secondary btn-sm disabled:opacity-50"
+                >
+                  Siguiente
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b flex items-center justify-between">
+          <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-2xl animate-scale-in">
+            <div className="p-6 border-b border-gray-200 dark:border-dark-border flex items-center justify-between">
               <h2 className="text-xl font-semibold">
                 {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+              >
+                <X size={24} />
               </button>
             </div>
-
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {formData.images[0] && (
-                <div className="mb-4">
-                  <img src={formData.images[0]} alt="Preview" className="w-32 h-32 object-cover rounded-lg" />
-                </div>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="input-admin"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">SKU *</label>
-                  <input
-                    type="text"
-                    value={formData.sku}
-                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    className="input-admin"
-                    required
-                  />
-                </div>
-              </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción *</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="input-admin"
-                  rows={3}
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="input"
                   required
                 />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="input"
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Precio</label>
                   <input
                     type="number"
                     step="0.01"
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    className="input-admin"
+                    className="input"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stock</label>
                   <input
                     type="number"
                     value={formData.stock}
                     onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                    className="input-admin"
+                    className="input"
                     required
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoría *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoría</label>
                   <select
-                    value={formData.categoryId}
-                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                    className="input-admin"
-                    required
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="input"
                   >
-                    <option value="">Seleccionar</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    {categories.filter(c => c !== 'Todos').map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' | 'outofstock' })}
+                    className="input"
+                  >
+                    {statuses.filter(s => s !== 'Todos').map(s => (
+                      <option key={s} value={s}>{getStatusLabel(s)}</option>
                     ))}
                   </select>
                 </div>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">URL de Imagen</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL de Imagen</label>
                 <input
                   type="text"
-                  value={formData.images[0]}
-                  onChange={(e) => setFormData({ ...formData, images: [e.target.value] })}
-                  className="input-admin"
-                  placeholder="https://..."
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  className="input"
+                  placeholder="/images/iPhone15ProMax.svg"
                 />
               </div>
-
-              <div className="flex items-center gap-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.active}
-                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                    className="w-4 h-4 text-primary-600 rounded"
-                  />
-                  <span className="text-sm text-gray-700">Producto Activo</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.featured}
-                    onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                    className="w-4 h-4 text-primary-600 rounded"
-                  />
-                  <span className="text-sm text-gray-700">Producto Destacado</span>
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t">
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="btn-secondary"
+                >
                   Cancelar
                 </button>
                 <button type="submit" className="btn-primary">
@@ -492,6 +516,93 @@ export default function Products() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {viewingProduct && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-2xl animate-scale-in">
+            <div className="p-6 border-b border-gray-200 dark:border-dark-border flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Detalle del Producto</h2>
+              <button
+                onClick={() => setViewingProduct(null)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="aspect-square w-full max-w-[300px] mx-auto rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                <img
+                  src={viewingProduct.image}
+                  alt={viewingProduct.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Nombre</p>
+                  <p className="font-medium">{viewingProduct.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Estado</p>
+                  <span className={getStatusBadge(viewingProduct.status)}>
+                    {getStatusLabel(viewingProduct.status)}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Precio</p>
+                  <p className="font-bold text-lg text-primary-600">${viewingProduct.price}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Stock</p>
+                  <p className="font-medium">{viewingProduct.stock} unidades</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Categoría</p>
+                  <p className="font-medium">{viewingProduct.category}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Fecha de creación</p>
+                  <p className="font-medium">{viewingProduct.createdAt}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Descripción</p>
+                <p className="text-gray-700 dark:text-gray-300">{viewingProduct.description}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deletingProduct && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md animate-scale-in">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="text-red-500" size={32} />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">¿Eliminar producto?</h3>
+              <p className="text-gray-500 mb-6">
+                Estás a punto de eliminar <span className="font-medium">{deletingProduct.name}</span>. Esta acción no se puede deshacer.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setDeletingProduct(null)}
+                  className="btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="btn-primary bg-red-500 hover:bg-red-600 border-red-500"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

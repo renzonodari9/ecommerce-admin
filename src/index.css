@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -10,67 +10,203 @@
   box-sizing: border-box;
 }
 
-body {
-  font-family: 'Inter', sans-serif;
-  background: #f8fafc;
+html {
+  scroll-behavior: smooth;
 }
 
+body {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  @apply bg-gray-50 text-gray-900;
+  @apply dark:bg-dark-bg dark:text-gray-100;
+}
+
+.dark body {
+  background: #0f172a;
+}
+
+/* Sidebar Styles */
 .sidebar {
   background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
 }
 
+.dark .sidebar {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+}
+
+/* Card Styles */
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-gray-100;
+  @apply dark:bg-dark-surface dark:border-dark-border;
+  @apply transition-all duration-200;
+}
+
+.card:hover {
+  @apply shadow-md border-gray-200;
+  @apply dark:border-gray-600;
+}
+
 .card-stat {
-  @apply bg-white rounded-xl p-6 shadow-sm border border-gray-100;
+  @apply card p-6;
+}
+
+.card-stat:hover {
+  @apply shadow-glow border-primary-300;
+  @apply dark:border-primary-500;
+  transform: translateY(-2px);
+}
+
+/* Button Styles */
+.btn {
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium;
+  @apply transition-all duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
 }
 
 .btn-primary {
-  @apply bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors;
-}
-
-.btn-demo {
-  @apply bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-lg font-semibold hover:from-primary-700 hover:to-primary-600 transition-all shadow-lg shadow-primary-500/30;
+  @apply btn bg-primary-600 text-white;
+  @apply hover:bg-primary-700 focus:ring-primary-500;
+  @apply active:scale-[0.98];
 }
 
 .btn-secondary {
-  @apply bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors;
+  @apply btn bg-gray-100 text-gray-700;
+  @apply hover:bg-gray-200 focus:ring-gray-500;
+  @apply dark:bg-dark-surface dark:text-gray-300 dark:border-dark-border;
+  @apply dark:hover:bg-gray-700;
+}
+
+.btn-ghost {
+  @apply btn text-gray-600 bg-transparent;
+  @apply hover:bg-gray-100 focus:ring-gray-500;
+  @apply dark:text-gray-400 dark:hover:bg-dark-surface;
 }
 
 .btn-danger {
-  @apply bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 transition-colors;
+  @apply btn bg-red-500 text-white;
+  @apply hover:bg-red-600 focus:ring-red-500;
 }
 
-.input-admin {
-  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none;
+.btn-sm {
+  @apply px-3 py-1.5 text-sm;
+}
+
+.btn-lg {
+  @apply px-6 py-3 text-base;
+}
+
+/* Input Styles */
+.input {
+  @apply w-full px-4 py-2.5 rounded-lg border border-gray-200;
+  @apply focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+  @apply outline-none transition-all duration-200;
+  @apply dark:bg-dark-surface dark:border-dark-border dark:text-gray-100;
+  @apply dark:focus:ring-primary-400;
+}
+
+.input-error {
+  @apply border-red-500 focus:ring-red-500 focus:border-red-500;
+}
+
+/* Table Styles */
+.table-container {
+  @apply bg-white rounded-xl shadow-sm overflow-hidden;
+  @apply dark:bg-dark-surface;
 }
 
 .table-admin {
-  @apply w-full bg-white rounded-lg shadow-sm;
+  @apply w-full;
 }
 
 .table-admin th {
-  @apply px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50;
+  @apply px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider;
+  @apply bg-gray-50 border-b border-gray-100;
+  @apply dark:bg-gray-800 dark:text-gray-400 dark:border-dark-border;
 }
 
 .table-admin td {
-  @apply px-6 py-4 text-sm text-gray-700 border-t border-gray-100;
+  @apply px-6 py-4 text-sm text-gray-700;
+  @apply border-t border-gray-100;
+  @apply dark:text-gray-300 dark:border-dark-border;
 }
 
+.table-admin tr:hover td {
+  @apply bg-gray-50;
+  @apply dark:bg-gray-800/50;
+}
+
+/* Badge Styles */
 .badge {
-  @apply px-2 py-1 rounded-full text-xs font-medium;
+  @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium;
 }
 
 .badge-success {
-  @apply bg-green-100 text-green-700;
+  @apply badge bg-green-100 text-green-700;
+  @apply dark:bg-green-900/30 dark:text-green-400;
 }
 
 .badge-warning {
-  @apply bg-yellow-100 text-yellow-700;
+  @apply badge bg-yellow-100 text-yellow-700;
+  @apply dark:bg-yellow-900/30 dark:text-yellow-400;
 }
 
 .badge-danger {
-  @apply bg-red-100 text-red-700;
+  @apply badge bg-red-100 text-red-700;
+  @apply dark:bg-red-900/30 dark:text-red-400;
 }
 
 .badge-info {
-  @apply bg-blue-100 text-blue-700;
+  @apply badge bg-blue-100 text-blue-700;
+  @apply dark:bg-blue-900/30 dark:text-blue-400;
+}
+
+.badge-neutral {
+  @apply badge bg-gray-100 text-gray-700;
+  @apply dark:bg-gray-700 dark:text-gray-300;
+}
+
+/* Loading Skeleton */
+.skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+  @apply dark:bg-gray-700;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+  @apply dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+  @apply dark:bg-gray-600;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+  @apply dark:bg-gray-500;
+}
+
+/* Utility animations */
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+.animate-delay-500 { animation-delay: 500ms; }
+
+/* Glass effect */
+.glass {
+  @apply bg-white/80 backdrop-blur-lg;
+  @apply dark:bg-dark-surface/80;
+}
+
+/* Gradient text */
+.gradient-text {
+  @apply bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-primary-600 to-primary-400;
+  @apply dark:from-primary-400 dark:to-primary-200;
 }

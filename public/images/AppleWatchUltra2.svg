@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#FFD700"/>
+  <text x="200" y="180" font-family="Arial" font-size="22" fill="black" text-anchor="middle">Apple</text>
+  <text x="200" y="220" font-family="Arial" font-size="18" fill="black" text-anchor="middle">Watch Ultra 2</text>
+  <circle cx="200" cy="280" r="25" fill="black" opacity="0.3"/>
+</svg>
